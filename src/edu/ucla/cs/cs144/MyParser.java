@@ -178,7 +178,7 @@ class MyParser {
         
         /* At this point 'doc' contains a DOM representation of an 'Items' XML
          * file. Use doc.getDocumentElement() to get the root Element. */
-        System.out.println("Successfully parsed - " + xmlFile);
+//        System.out.println("Successfully parsed - " + xmlFile);
         
         /* Fill in code here (you will probably need to write auxiliary
             methods). */

@@ -49,6 +49,10 @@ class Bid {
         m_time = time;
         m_amount = amount;
     }
+
+    public final String toCSVFormat() {
+        return String.format("%s,%s,%s,%s\n", m_itemId, m_userId, m_time, m_amount);
+    }
 }
 
 class User {
@@ -61,14 +65,22 @@ class User {
         m_location = location;
         m_country = country;
     }
+
+    public final String toCSVFormat() {
+        return String.format("%s,%s,%s,%s,%s\n", m_userId, m_buyerRating, m_sellerRating, m_location, m_country);
+    }
 }
 
 class Category {
-    String m_itemId, m_category;
+    String m_itemId, m_categoryName;
 
-    Category(String itemId, String category) {
+    Category(String itemId, String categoryName) {
         m_itemId = itemId;
-        m_category = category;
+        m_categoryName = categoryName;
+    }
+
+    public final String toCSVFormat() {
+        return String.format("%s,%s\n", m_itemId, m_categoryName);
     }
 }
 
@@ -93,6 +105,12 @@ class Item {
         m_ends = ends;
         m_userId = userId;
         m_description = description;
+    }
+
+    public final String toCSVFormat() {
+        return String.format("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n",
+                m_itemId, m_name, m_currently, m_buyPrice, m_firstBid, m_numBids,
+                m_location, m_country, m_latitude, m_longitude, m_started, m_ends, m_userId, m_description);
     }
 }
 
@@ -219,7 +237,7 @@ class MyParserPrint {
         }
     }
 
-    static void storeBids(Element item) {
+    static void storeBids(Element item, SimpleDateFormat inputFormat, SimpleDateFormat outputFormat) {
         Element[] bids = getElementsByTagNameNR(getElementByTagNameNR(item, "Bids"), "Bid");
         String itemId = item.getAttribute("ItemID");
 
@@ -227,7 +245,17 @@ class MyParserPrint {
             Element bid = bids[i];
             Element bidder = getElementByTagNameNR(bid, "Bidder");
 
-            String time = getElementTextByTagNameNR(bid, "Time");
+            // String parsedTime;
+
+            // try {
+                String time = getElementTextByTagNameNR(bid, "Time");
+            //     Date timeDate = inputFormat.parse(time);
+            //     parsedTime = outputFormat.format(timeDate);
+            // }
+            // catch(ParseException pe) {
+            //     System.out.println("ERROR");
+            // }
+
             String amount = getElementTextByTagNameNR(bid, "Amount");
             String location = getElementTextByTagNameNR(bidder, "Location");
             String country = getElementTextByTagNameNR(bidder, "Country");
@@ -270,6 +298,74 @@ class MyParserPrint {
         String buyerRating = Users.containsKey(userId) ? Users.get(userId).m_buyerRating : "";
         Users.put(userId, new User(userId, buyerRating, sellerRating, location, country));
     }
+
+    static void flushToFile() {
+        final String USER_FILE = "user.csv";
+        final String CATEGORY_FILE = "category.csv";
+        final String BID_FILE = "bid.csv";
+        final String ITEM_FILE = "item.csv";
+
+        FileWriter fileWriter;
+
+        try {
+            File file;
+
+            // Users
+            file = new File(USER_FILE);
+
+            if (file.exists())
+                file.delete();
+
+            file.createNewFile();
+            fileWriter = new FileWriter(USER_FILE, true);
+
+            for (String key : Users.keySet())
+                fileWriter.write(Users.get(key).toCSVFormat());
+
+            // Categories
+            file = new File(CATEGORY_FILE);
+
+            if (file.exists())
+                file.delete();
+
+            file.createNewFile();
+            fileWriter = new FileWriter(CATEGORY_FILE, true);
+
+            for (String key : Categories.keySet()) 
+                fileWriter.write(Categories.get(key).toCSVFormat());
+
+            // Bids
+            file = new File(BID_FILE);
+
+            if (file.exists())
+                file.delete();
+
+            file.createNewFile();
+            fileWriter = new FileWriter(BID_FILE, true);
+
+            for (String key : Bids.keySet())
+                fileWriter.write(Bids.get(key).toCSVFormat());
+
+            // Items
+            file = new File(ITEM_FILE);
+
+            if (file.exists())
+                file.delete();
+
+            file.createNewFile();
+            fileWriter = new FileWriter(ITEM_FILE, true);
+
+            for (String key : Items.keySet()) {
+                System.out.println(Items.get(key).toCSVFormat());
+                fileWriter.write(Items.get(key).toCSVFormat());
+            }
+
+        }
+        catch (IOException ioe) {
+            ioe.printStackTrace();
+        }
+        
+    }
     
     /* Process one items-???.xml file.
      */
@@ -299,6 +395,9 @@ class MyParserPrint {
         // Get root element
         Element root = doc.getDocumentElement();
 
+        SimpleDateFormat inputFormat = new SimpleDateFormat("MMM-dd-yy HH:mm:ss");
+        SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
         // Traverse through the children of root
         Element[] items = getElementsByTagNameNR(root, "Item");
         for (int i = 0; i < items.length; i++) {
@@ -308,7 +407,7 @@ class MyParserPrint {
 
             Element item = items[i];
 
-            itemId = item.getAttribute("ItemId");
+            itemId = item.getAttribute("ItemID");
             name = getElementTextByTagNameNR(item, "Name");
             currently = getElementTextByTagNameNR(item, "Currently");
             buyPrice = getElementTextByTagNameNR(item, "Buy_Price");
@@ -316,10 +415,27 @@ class MyParserPrint {
             numBids = getElementTextByTagNameNR(item, "Number_of_Bids");
             location = getElementTextByTagNameNR(item, "Location");
             country = getElementTextByTagNameNR(item, "Country");
-            started = getElementTextByTagNameNR(item, "Started");
-            ends = getElementTextByTagNameNR(item, "Ends");
+
+            //String parsedStarted;
+            //String parsedEnds;
+
+            //try {
+                started = getElementTextByTagNameNR(item, "Started");
+              //  Date startDate = inputFormat.parse(started);
+                //parsedStarted = outputFormat.format(startDate);
+                
+                ends = getElementTextByTagNameNR(item, "Ends");
+                //Date endDate = inputFormat.parse(ends);
+                //parsedEnds = outputFormat.format(endDate);
+            //}
+            //catch(ParseException pe) {
+             //   System.out.println("ERROR");
+            //}
+
             userId =  getElementByTagNameNR(item, "Seller").getAttribute("UserID");
-            description = getElementTextByTagNameNR(item, "Description"); // TODO: truncate description
+            description = getElementTextByTagNameNR(item, "Description");
+            description = description.substring(0, Math.min(4000, description.length()));
+
 
             // Get Location child and attributes
             Element loc = getElementByTagNameNR(item, "Location");
@@ -328,10 +444,10 @@ class MyParserPrint {
 
             storeCategories(item);
             storeSeller(item);
-            storeBids(item);
+            storeBids(item, inputFormat, outputFormat);
 
-            Items.put(itemId, new Item(itemId, name, currently, buyPrice, firstBid, numBids, location,
-                    latitude, longitude, country, started, ends, userId, description));
+            Items.put(itemId, new Item(itemId, name, currently, buyPrice, firstBid, numBids, location, 
+                latitude, longitude, country, started, ends, userId, description));
 
             /*
             // TEST: Hash table values
@@ -353,7 +469,8 @@ class MyParserPrint {
 
             // TODO: time formats?
         }
-        
+
+        flushToFile();
         /**************************************************************/
         
 //        recursiveDescent(doc, 0);

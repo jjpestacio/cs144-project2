@@ -237,7 +237,23 @@ class MyParserPrint {
         }
     }
 
-    static void storeBids(Element item, SimpleDateFormat inputFormat, SimpleDateFormat outputFormat) {
+    static String toSQLFormat(String date) {
+        SimpleDateFormat inputFormat = new SimpleDateFormat("MMM-dd-yy HH:mm:ss");
+        SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        Date inputDate;
+        String outputDate = "";
+
+        try {
+            inputDate = inputFormat.parse(date);
+            outputDate = outputFormat.format(inputDate);
+        }
+        catch(ParseException e) {
+            System.out.println("Error with converting date");
+        }
+        return outputDate;
+}
+
+    static void storeBids(Element item) {
         Element[] bids = getElementsByTagNameNR(getElementByTagNameNR(item, "Bids"), "Bid");
         String itemId = item.getAttribute("ItemID");
 
@@ -245,17 +261,7 @@ class MyParserPrint {
             Element bid = bids[i];
             Element bidder = getElementByTagNameNR(bid, "Bidder");
 
-            // String parsedTime;
-
-            // try {
-                String time = getElementTextByTagNameNR(bid, "Time");
-            //     Date timeDate = inputFormat.parse(time);
-            //     parsedTime = outputFormat.format(timeDate);
-            // }
-            // catch(ParseException pe) {
-            //     System.out.println("ERROR");
-            // }
-
+            String time = toSQLFormat(getElementTextByTagNameNR(bid, "Time"));
             String amount = getElementTextByTagNameNR(bid, "Amount");
             String location = getElementTextByTagNameNR(bidder, "Location");
             String country = getElementTextByTagNameNR(bidder, "Country");
@@ -395,9 +401,6 @@ class MyParserPrint {
         // Get root element
         Element root = doc.getDocumentElement();
 
-        SimpleDateFormat inputFormat = new SimpleDateFormat("MMM-dd-yy HH:mm:ss");
-        SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
         // Traverse through the children of root
         Element[] items = getElementsByTagNameNR(root, "Item");
         for (int i = 0; i < items.length; i++) {
@@ -416,21 +419,8 @@ class MyParserPrint {
             location = getElementTextByTagNameNR(item, "Location");
             country = getElementTextByTagNameNR(item, "Country");
 
-            //String parsedStarted;
-            //String parsedEnds;
-
-            //try {
-                started = getElementTextByTagNameNR(item, "Started");
-              //  Date startDate = inputFormat.parse(started);
-                //parsedStarted = outputFormat.format(startDate);
-                
-                ends = getElementTextByTagNameNR(item, "Ends");
-                //Date endDate = inputFormat.parse(ends);
-                //parsedEnds = outputFormat.format(endDate);
-            //}
-            //catch(ParseException pe) {
-             //   System.out.println("ERROR");
-            //}
+            started = toSQLFormat(getElementTextByTagNameNR(item, "Started"));
+            ends = toSQLFormat(getElementTextByTagNameNR(item, "Ends"));
 
             userId =  getElementByTagNameNR(item, "Seller").getAttribute("UserID");
             description = getElementTextByTagNameNR(item, "Description");
@@ -444,7 +434,7 @@ class MyParserPrint {
 
             storeCategories(item);
             storeSeller(item);
-            storeBids(item, inputFormat, outputFormat);
+            storeBids(item);
 
             Items.put(itemId, new Item(itemId, name, currently, buyPrice, firstBid, numBids, location, 
                 latitude, longitude, country, started, ends, userId, description));

@@ -11,38 +11,38 @@ Part B
 
 1. Schemas
 Item (
-	ItemId PRIMARY KEY,
+	ItemID PRIMARY KEY,
 	Name, 
-	CurrentPrice, 
-	BuyPrice, 
-	FirstBid, 
-	NumBids, 
+	Currently, 
+	Buy_Price, 
+	First_Bid, 
+	Number_of_Bids, 
 	Location, 
 	Latitude, 
 	Longitude, 
 	Country, 
 	Started, 
-	Ended, 
-	UserId, 
+	Ends, 
+	UserID, 
 	Description
 )
 
 Category (
-	ItemId PRIMARY KEY,
+	ItemID PRIMARY KEY,
 	Category PRIMARY KEY
 )
 
 Bid (
-	ItemId PRIMARY KEY,
-	UserId PRIMARY KEY,
+	ItemID PRIMARY KEY,
+	UserID PRIMARY KEY,
 	Time,
 	Amount
 )
 
 User (
-	UserId PRIMARY KEY, 
-	BuyerRating, 
-	SellerRating,
+	UserID PRIMARY KEY, 
+	Bidder_Rating, 
+	Seller_Rating,
 	Location, 
 	Country
 )

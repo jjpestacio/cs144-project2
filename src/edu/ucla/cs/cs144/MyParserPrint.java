@@ -110,7 +110,7 @@ class Item {
     public final String toCSVFormat() {
         return String.format("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n",
                 m_itemId, m_name, m_currently, m_buyPrice, m_firstBid, m_numBids,
-                m_location, m_country, m_latitude, m_longitude, m_started, m_ends, m_userId, m_description);
+                m_location, m_latitude, m_longitude, m_country, m_started, m_ends, m_userId, m_description);
     }
 }
 

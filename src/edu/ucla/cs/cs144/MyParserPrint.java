@@ -262,7 +262,7 @@ class MyParserPrint {
             Element bidder = getElementByTagNameNR(bid, "Bidder");
 
             String time = toSQLFormat(getElementTextByTagNameNR(bid, "Time"));
-            String amount = getElementTextByTagNameNR(bid, "Amount");
+            String amount = strip(getElementTextByTagNameNR(bid, "Amount"));
             String location = getElementTextByTagNameNR(bidder, "Location");
             String country = getElementTextByTagNameNR(bidder, "Country");
             String buyerRating = bidder.getAttribute("Rating");
@@ -337,9 +337,9 @@ class MyParserPrint {
             file.createNewFile();
             fileWriter = new FileWriter(CATEGORY_FILE, true);
 
-            for (String key : Categories.keySet()) 
+            for (String key : Categories.keySet()) {
                 fileWriter.write(Categories.get(key).toCSVFormat());
-
+            }
             // Bids
             file = new File(BID_FILE);
 
@@ -349,9 +349,9 @@ class MyParserPrint {
             file.createNewFile();
             fileWriter = new FileWriter(BID_FILE, true);
 
-            for (String key : Bids.keySet())
+            for (String key : Bids.keySet()) {
                 fileWriter.write(Bids.get(key).toCSVFormat());
-
+            }
             // Items
             file = new File(ITEM_FILE);
 
@@ -362,7 +362,6 @@ class MyParserPrint {
             fileWriter = new FileWriter(ITEM_FILE, true);
 
             for (String key : Items.keySet()) {
-                System.out.println(Items.get(key).toCSVFormat());
                 fileWriter.write(Items.get(key).toCSVFormat());
             }
 
@@ -438,26 +437,6 @@ class MyParserPrint {
 
             Items.put(itemId, new Item(itemId, name, currently, buyPrice, firstBid, numBids, location, 
                 latitude, longitude, country, started, ends, userId, description));
-
-            /*
-            // TEST: Hash table values
-            for (String key : Categories.keySet())
-                System.out.println(key + ": " + Categories.get(key).m_category);
-            */
-
-            /*
-            // TEST: User values
-            for (String key : Users.keySet())
-                System.out.println(key + ": " + Users.get(key).m_userId);
-            */
-
-            /*
-            // TEST: Bids values
-            for (String key : Bids.keySet())
-                System.out.println(key + ": " + Bids.get(key).m_amount);
-            */
-
-            // TODO: time formats?
         }
 
         flushToFile();

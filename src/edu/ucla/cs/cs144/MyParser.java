@@ -40,11 +40,90 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.ErrorHandler;
 
+class Bid {
+    String m_itemId, m_userId, m_time, m_amount;
+
+    Bid(String itemId, String userId, String time, String amount) {
+        m_itemId = itemId;
+        m_userId = userId;
+        m_time = time;
+        m_amount = amount;
+    }
+
+    public final String toCSVFormat() {
+        return String.format("%s,%s,%s,%s\n", m_itemId, m_userId, m_time, m_amount);
+    }
+}
+
+class User {
+    String m_userId, m_buyerRating, m_sellerRating, m_location, m_country;
+
+    User(String userId, String buyerRating, String sellerRating, String location, String country) {
+        m_userId = userId;
+        m_buyerRating = buyerRating;
+        m_sellerRating = sellerRating;
+        m_location = location;
+        m_country = country;
+    }
+
+    public final String toCSVFormat() {
+        return String.format("%s,%s,%s,%s,%s\n", m_userId, m_buyerRating, m_sellerRating, m_location, m_country);
+    }
+}
+
+class Category {
+    String m_itemId, m_categoryName;
+
+    Category(String itemId, String categoryName) {
+        m_itemId = itemId;
+        m_categoryName = categoryName;
+    }
+
+    public final String toCSVFormat() {
+        return String.format("%s,%s\n", m_itemId, m_categoryName);
+    }
+}
+
+class Item {
+    String m_itemId, m_name, m_currently, m_buyPrice, m_firstBid, m_numBids,
+            m_location, m_latitude, m_longitude, m_country, m_started, m_ends, m_userId, m_description;
+
+    Item(String itemId, String name, String currently, String buyPrice,
+         String firstBid, String numBids, String location, String latitude, String longitude,
+         String country, String started, String ends, String userId, String description) {
+        m_itemId = itemId;
+        m_name = name;
+        m_currently = currently;
+        m_buyPrice = buyPrice;
+        m_firstBid = firstBid;
+        m_numBids = numBids;
+        m_location = location;
+        m_latitude = latitude;
+        m_longitude = longitude;
+        m_country = country;
+        m_started = started;
+        m_ends = ends;
+        m_userId = userId;
+        m_description = description;
+    }
+
+    public final String toCSVFormat() {
+        return String.format("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n",
+                m_itemId, m_name, m_currently, m_buyPrice, m_firstBid, m_numBids,
+                m_location, m_latitude, m_longitude, m_country, m_started, m_ends, m_userId, m_description);
+    }
+}
 
 class MyParser {
     
     static final String columnSeparator = "|*|";
     static DocumentBuilder builder;
+
+     // Hold the information
+    static Hashtable<String, Item> Items = new Hashtable<String, Item>(); // key: itemId
+    static Hashtable<String, Category> Categories = new Hashtable<String, Category>(); // key: itemId + categoryName
+    static Hashtable<String, User> Users = new Hashtable<String, User>(); // key: userId
+    static Hashtable<String, Bid> Bids = new Hashtable<String, Bid>(); // key: itemId + userId
     
     static final String[] typeName = {
 	"none",
@@ -157,6 +236,141 @@ class MyParser {
             return nf.format(am).substring(1);
         }
     }
+
+    static String toSQLFormat(String date) {
+        SimpleDateFormat inputFormat = new SimpleDateFormat("MMM-dd-yy HH:mm:ss");
+        SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        Date inputDate;
+        String outputDate = "";
+
+        try {
+            inputDate = inputFormat.parse(date);
+            outputDate = outputFormat.format(inputDate);
+        }
+        catch(ParseException e) {
+            System.out.println("Error with converting date");
+        }
+        return outputDate;
+    }
+
+    static void storeBids(Element item) {
+        Element[] bids = getElementsByTagNameNR(getElementByTagNameNR(item, "Bids"), "Bid");
+        String itemId = item.getAttribute("ItemID");
+
+        for (int i = 0; i < bids.length; i++) {
+            Element bid = bids[i];
+            Element bidder = getElementByTagNameNR(bid, "Bidder");
+
+            String time = toSQLFormat(getElementTextByTagNameNR(bid, "Time"));
+            String amount = strip(getElementTextByTagNameNR(bid, "Amount"));
+            String location = getElementTextByTagNameNR(bidder, "Location");
+            String country = getElementTextByTagNameNR(bidder, "Country");
+            String buyerRating = bidder.getAttribute("Rating");
+            String userId = bidder.getAttribute("UserID");
+
+            String hashKey = itemId + userId;
+            Bids.put(hashKey, new Bid(itemId, userId, time, amount));
+
+            // Check if the user already exists to get their sellerRating
+            String sellerRating = Users.containsKey(userId) ? Users.get(userId).m_sellerRating : "";
+            Users.put(userId, new User(userId, buyerRating, sellerRating, location, country));
+        }
+    }
+
+    static void storeCategories(Element item) {
+        Element[] categories = getElementsByTagNameNR(item, "Category");
+        String itemId = item.getAttribute("ItemID");
+
+        for (int i = 0; i < categories.length; i++) {
+            Element category = getElementByTagNameNR(item, "Category");
+            String categoryName = getElementText(category);
+
+            String hashKey = itemId + categoryName;
+            Categories.put(hashKey, new Category(itemId, categoryName));
+        }
+    }
+
+    static void storeSeller(Element item) {
+        String location, country, sellerRating, userId;
+
+        location = getElementText(getElementByTagNameNR(item, "Location"));
+        country = getElementText(getElementByTagNameNR(item, "Country"));
+
+        Element seller = getElementByTagNameNR(item, "Seller");
+        sellerRating = seller.getAttribute("Rating");
+        userId = seller.getAttribute("UserID");
+
+        // Check if the user already exists to get their buyerRating
+        String buyerRating = Users.containsKey(userId) ? Users.get(userId).m_buyerRating : "";
+        Users.put(userId, new User(userId, buyerRating, sellerRating, location, country));
+    }
+
+    static void flushToFile() {
+        final String USER_FILE = "user.csv";
+        final String CATEGORY_FILE = "category.csv";
+        final String BID_FILE = "bid.csv";
+        final String ITEM_FILE = "item.csv";
+
+        FileWriter fileWriter;
+
+        try {
+            File file;
+
+            // Users
+            file = new File(USER_FILE);
+
+            if (file.exists())
+                file.delete();
+
+            file.createNewFile();
+            fileWriter = new FileWriter(USER_FILE, true);
+
+            for (String key : Users.keySet())
+                fileWriter.write(Users.get(key).toCSVFormat());
+
+            // Categories
+            file = new File(CATEGORY_FILE);
+
+            if (file.exists())
+                file.delete();
+
+            file.createNewFile();
+            fileWriter = new FileWriter(CATEGORY_FILE, true);
+
+            for (String key : Categories.keySet()) {
+                fileWriter.write(Categories.get(key).toCSVFormat());
+            }
+            // Bids
+            file = new File(BID_FILE);
+
+            if (file.exists())
+                file.delete();
+
+            file.createNewFile();
+            fileWriter = new FileWriter(BID_FILE, true);
+
+            for (String key : Bids.keySet()) {
+                fileWriter.write(Bids.get(key).toCSVFormat());
+            }
+            // Items
+            file = new File(ITEM_FILE);
+
+            if (file.exists())
+                file.delete();
+
+            file.createNewFile();
+            fileWriter = new FileWriter(ITEM_FILE, true);
+
+            for (String key : Items.keySet()) {
+                fileWriter.write(Items.get(key).toCSVFormat());
+            }
+
+        }
+        catch (IOException ioe) {
+            ioe.printStackTrace();
+        }
+        
+    }
     
     /* Process one items-???.xml file.
      */
@@ -183,7 +397,49 @@ class MyParser {
         /* Fill in code here (you will probably need to write auxiliary
             methods). */
         
-        
+        // Get root element
+        Element root = doc.getDocumentElement();
+
+        // Traverse through the children of root
+        Element[] items = getElementsByTagNameNR(root, "Item");
+        for (int i = 0; i < items.length; i++) {
+            // Attributes to get
+            String itemId, name, currently, buyPrice, firstBid, numBids,
+                    location, latitude, longitude, country, started, ends, userId, description;
+
+            Element item = items[i];
+
+            itemId = item.getAttribute("ItemID");
+            name = getElementTextByTagNameNR(item, "Name");
+            currently = getElementTextByTagNameNR(item, "Currently");
+            buyPrice = getElementTextByTagNameNR(item, "Buy_Price");
+            firstBid = getElementTextByTagNameNR(item, "First_Bid");
+            numBids = getElementTextByTagNameNR(item, "Number_of_Bids");
+            location = getElementTextByTagNameNR(item, "Location");
+            country = getElementTextByTagNameNR(item, "Country");
+
+            started = toSQLFormat(getElementTextByTagNameNR(item, "Started"));
+            ends = toSQLFormat(getElementTextByTagNameNR(item, "Ends"));
+
+            userId =  getElementByTagNameNR(item, "Seller").getAttribute("UserID");
+            description = getElementTextByTagNameNR(item, "Description");
+            description = description.substring(0, Math.min(4000, description.length()));
+
+
+            // Get Location child and attributes
+            Element loc = getElementByTagNameNR(item, "Location");
+            latitude = loc.getAttribute("Latitude");
+            longitude = loc.getAttribute("Longitude");
+
+            storeCategories(item);
+            storeSeller(item);
+            storeBids(item);
+
+            Items.put(itemId, new Item(itemId, name, currently, buyPrice, firstBid, numBids, location, 
+                latitude, longitude, country, started, ends, userId, description));
+        }
+
+        flushToFile();
         
         /**************************************************************/
         

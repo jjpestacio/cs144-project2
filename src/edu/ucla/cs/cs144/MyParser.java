@@ -115,8 +115,6 @@ class Item {
 }
 
 class MyParser {
-    static int count = 0;
-    
     static final String columnSeparator = "|*|";
     static DocumentBuilder builder;
 
@@ -327,8 +325,8 @@ class MyParser {
             fileWriter = new FileWriter(USER_FILE, true);
 
             for (String key : Users.keySet()) {
-                count++;
                 fileWriter.write(Users.get(key).toCSVFormat());
+                fileWriter.flush();
             }
 
             // Categories
@@ -340,8 +338,10 @@ class MyParser {
             file.createNewFile();
             fileWriter = new FileWriter(CATEGORY_FILE, true);
 
-            for (String key : Categories.keySet())
+            for (String key : Categories.keySet()){
                 fileWriter.write(Categories.get(key).toCSVFormat());
+                fileWriter.flush();
+            }
             
             // Bids
             file = new File(BID_FILE);
@@ -352,8 +352,10 @@ class MyParser {
             file.createNewFile();
             fileWriter = new FileWriter(BID_FILE, true);
 
-            for (String key : Bids.keySet())
+            for (String key : Bids.keySet()) {
                 fileWriter.write(Bids.get(key).toCSVFormat());
+                fileWriter.flush();
+            }
             
             // Items
             file = new File(ITEM_FILE);
@@ -366,7 +368,10 @@ class MyParser {
 
             for (String key : Items.keySet()) {
                 fileWriter.write(Items.get(key).toCSVFormat());
+                fileWriter.flush();
             }
+
+            fileWriter.close();
 
         }
         catch (IOException ioe) {
@@ -476,7 +481,5 @@ class MyParser {
         }
 
         flushToFile();
-        System.out.println(String.format("\nLoop Iterations: %d\n", count));
-        System.out.println(String.format("\nUser HashTable Size: %d\n", Users.size()));
     }
 }

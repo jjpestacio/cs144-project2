@@ -115,6 +115,7 @@ class Item {
 }
 
 class MyParser {
+    static int count = 0;
     
     static final String columnSeparator = "|*|";
     static DocumentBuilder builder;
@@ -325,8 +326,10 @@ class MyParser {
             file.createNewFile();
             fileWriter = new FileWriter(USER_FILE, true);
 
-            for (String key : Users.keySet())
+            for (String key : Users.keySet()) {
+                count++;
                 fileWriter.write(Users.get(key).toCSVFormat());
+            }
 
             // Categories
             file = new File(CATEGORY_FILE);
@@ -337,9 +340,9 @@ class MyParser {
             file.createNewFile();
             fileWriter = new FileWriter(CATEGORY_FILE, true);
 
-            for (String key : Categories.keySet()) {
+            for (String key : Categories.keySet())
                 fileWriter.write(Categories.get(key).toCSVFormat());
-            }
+            
             // Bids
             file = new File(BID_FILE);
 
@@ -349,9 +352,9 @@ class MyParser {
             file.createNewFile();
             fileWriter = new FileWriter(BID_FILE, true);
 
-            for (String key : Bids.keySet()) {
+            for (String key : Bids.keySet())
                 fileWriter.write(Bids.get(key).toCSVFormat());
-            }
+            
             // Items
             file = new File(ITEM_FILE);
 
@@ -392,7 +395,7 @@ class MyParser {
         
         /* At this point 'doc' contains a DOM representation of an 'Items' XML
          * file. Use doc.getDocumentElement() to get the root Element. */
-//        System.out.println("Successfully parsed - " + xmlFile);
+       System.out.println("Successfully parsed - " + xmlFile);
         
         /* Fill in code here (you will probably need to write auxiliary
             methods). */
@@ -438,8 +441,6 @@ class MyParser {
             Items.put(itemId, new Item(itemId, name, currently, buyPrice, firstBid, numBids, location, 
                 latitude, longitude, country, started, ends, userId, description));
         }
-
-        flushToFile();
         
         /**************************************************************/
         
@@ -473,5 +474,9 @@ class MyParser {
             File currentFile = new File(args[i]);
             processFile(currentFile);
         }
+
+        flushToFile();
+        System.out.println(String.format("\nLoop Iterations: %d\n", count));
+        System.out.println(String.format("\nUser HashTable Size: %d\n", Users.size()));
     }
 }

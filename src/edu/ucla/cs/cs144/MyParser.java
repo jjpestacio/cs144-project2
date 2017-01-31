@@ -115,6 +115,8 @@ class Item {
 }
 
 class MyParser {
+    static int count = 0;
+
     static final String columnSeparator = "|*|";
     static DocumentBuilder builder;
 
@@ -367,6 +369,9 @@ class MyParser {
             fileWriter = new FileWriter(ITEM_FILE, true);
 
             for (String key : Items.keySet()) {
+                if (Items.get(key).m_location.equals("New York"))
+                    count++;
+
                 fileWriter.write(Items.get(key).toCSVFormat());
                 fileWriter.flush();
             }
@@ -481,5 +486,7 @@ class MyParser {
         }
 
         flushToFile();
+
+        System.out.println(String.format("\nItems with Location=\"New York\": %d\n", count));
     }
 }

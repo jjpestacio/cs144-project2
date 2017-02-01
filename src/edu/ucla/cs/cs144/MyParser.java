@@ -115,8 +115,6 @@ class Item {
 }
 
 class MyParser {
-    static int count = 0;
-
     static final String columnSeparator = "|*|";
     static DocumentBuilder builder;
 

@@ -9,3 +9,8 @@ ant run-all
 
 mysql CS144 < load.sql
 
+rm item.csv
+rm bid.csv
+rm category.csv
+rm user.csv
+rm -r bin

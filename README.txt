@@ -1,17 +1,3 @@
-TODO:
-CSS layout
-bash script
-time formatting
-create.sql
-optionally enclosed by ""
-
-____________________________________
-NEW TODO:
-1. use provided time formatter
-2. format money using provided money formatter
-
-____________________________________
-
 Part B
 
 1. Schemas

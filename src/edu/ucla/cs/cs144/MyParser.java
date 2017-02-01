@@ -51,7 +51,7 @@ class Bid {
     }
 
     public final String toCSVFormat() {
-        return String.format("%s,%s,%s,%s\n", m_itemId, m_userId, m_time, m_amount);
+        return String.format("%s|*|%s|*|%s|*|%s\n", m_itemId, m_userId, m_time, m_amount);
     }
 }
 
@@ -67,7 +67,7 @@ class User {
     }
 
     public final String toCSVFormat() {
-        return String.format("%s,%s,%s,%s,%s\n", m_userId, m_buyerRating, m_sellerRating, m_location, m_country);
+        return String.format("%s|*|%s|*|%s|*|%s|*|%s\n", m_userId, m_buyerRating, m_sellerRating, m_location, m_country);
     }
 }
 
@@ -80,7 +80,7 @@ class Category {
     }
 
     public final String toCSVFormat() {
-        return String.format("%s,%s\n", m_itemId, m_categoryName);
+        return String.format("%s|*|%s\n", m_itemId, m_categoryName);
     }
 }
 
@@ -108,13 +108,15 @@ class Item {
     }
 
     public final String toCSVFormat() {
-        return String.format("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n",
+        return String.format("%s|*|%s|*|%s|*|%s|*|%s|*|%s|*|%s|*|%s|*|%s|*|%s|*|%s|*|%s|*|%s|*|%s\n",
                 m_itemId, m_name, m_currently, m_buyPrice, m_firstBid, m_numBids,
                 m_location, m_latitude, m_longitude, m_country, m_started, m_ends, m_userId, m_description);
     }
 }
 
 class MyParser {
+    static int count = 0;
+
     static final String columnSeparator = "|*|";
     static DocumentBuilder builder;
 
@@ -122,7 +124,7 @@ class MyParser {
     static Hashtable<String, Item> Items = new Hashtable<String, Item>(); // key: itemId
     static Hashtable<String, Category> Categories = new Hashtable<String, Category>(); // key: itemId + categoryName
     static Hashtable<String, User> Users = new Hashtable<String, User>(); // key: userId
-    static Hashtable<String, Bid> Bids = new Hashtable<String, Bid>(); // key: itemId + userId
+    static Hashtable<String, Bid> Bids = new Hashtable<String, Bid>(); // key: itemId + userId + time
     
     static final String[] typeName = {
 	"none",
@@ -267,7 +269,7 @@ class MyParser {
             String buyerRating = bidder.getAttribute("Rating");
             String userId = bidder.getAttribute("UserID");
 
-            String hashKey = itemId + userId;
+            String hashKey = itemId + userId + time;
             Bids.put(hashKey, new Bid(itemId, userId, time, amount));
 
             // Check if the user already exists to get their sellerRating
@@ -281,7 +283,7 @@ class MyParser {
         String itemId = item.getAttribute("ItemID");
 
         for (int i = 0; i < categories.length; i++) {
-            Element category = getElementByTagNameNR(item, "Category");
+            Element category = categories[i];
             String categoryName = getElementText(category);
 
             String hashKey = itemId + categoryName;
